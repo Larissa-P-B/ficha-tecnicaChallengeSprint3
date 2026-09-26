@@ -137,13 +137,60 @@ http://localhost:8085/swagger-ui/index.html
 
 ## Autenticação, usuários e avaliação
 
-Pré-requisitos: JDK 25, MySQL ativo e Maven (ou wrapper `mvnw.cmd`). Crie o banco
-`automotiva_db`; configure `DB_URL`, `DB_USER` e `DB_PASSWORD` nas variáveis de
-ambiente do IntelliJ (**Run > Edit Configurations > Environment variables**).
-Configure também `JWT_SECRET` com pelo menos 32 bytes aleatórios. O arquivo
-`application.properties` contém valores locais de exemplo para conexão;
-substitua-os conforme seu MySQL. Inicie `FichaTecnicaApplication`; Flyway aplicará
-as migrações V1 a V5 em sequência. Nunca altere migrações já aplicadas.
+Pré-requisitos: JDK 25, MySQL ativo e Maven (ou o wrapper `mvnw.cmd`). Crie
+o banco `automotiva_db`. Antes de iniciar, configure as variáveis de ambiente:
+
+| Variável | Necessária? | Valor |
+|---|---|---|
+| `DB_PASSWORD` | Sim | Senha do seu usuário do MySQL; não é a senha da API. |
+| `JWT_SECRET` | Sim | Chave aleatória de pelo menos 32 bytes para assinar os tokens. |
+| `DB_USER` | Se diferente de `root` | Usuário do MySQL. |
+| `DB_URL` | Se diferente do padrão | O padrão é `jdbc:mysql://localhost:3306/automotiva_db`. |
+| `APP_CORS_ALLOWED_ORIGINS` | Apenas para frontend em outra origem | Origens separadas por vírgula, sem barra final. |
+
+### Criar as variáveis no IntelliJ IDEA (Windows)
+
+1. No PowerShell, gere uma chave para `JWT_SECRET` com os comandos abaixo.
+   Copie a saída da última linha; não copie os próprios comandos para o valor.
+
+   ```powershell
+   $bytes = New-Object byte[] 32
+   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($bytes)
+   $rng.Dispose()
+   [Convert]::ToBase64String($bytes)
+   ```
+
+2. No IntelliJ, abra **Run > Edit Configurations** e selecione
+   **FichaTecnicaApplication**.
+3. Em **Environment variables**, clique no ícone de lista à direita. Crie duas
+   entradas: `DB_PASSWORD` com sua senha do MySQL e `JWT_SECRET` com a
+   chave gerada. Se seu MySQL usa outro usuário ou endereço, crie também
+   `DB_USER` e `DB_URL`. Clique **OK** para salvar.
+4. Execute **FichaTecnicaApplication**. A API deve iniciar na porta 8085 e
+   o Flyway aplicará as migrações V1 a V5 ainda pendentes. Não altere
+   migrações já aplicadas.
+
+Não coloque os valores reais de `DB_PASSWORD` ou `JWT_SECRET` no
+`application.properties`, no README ou em commits. As variáveis cadastradas
+na configuração **Run** valem para essa execução no IntelliJ; um PowerShell
+separado não as recebe automaticamente.
+
+### Executar pelo terminal PowerShell
+
+No terminal, entre na pasta que contém o `pom.xml`, defina as variáveis na
+**mesma janela** e execute:
+
+```powershell
+$env:DB_PASSWORD = "SUA_SENHA_DO_MYSQL"
+$env:JWT_SECRET = "COLE_AQUI_A_CHAVE_GERADA"
+.\mvnw.cmd test
+.\mvnw.cmd spring-boot:run
+```
+
+Substitua os textos de exemplo por seus valores locais. Se usar o IntelliJ
+para iniciar a aplicação, siga a seção anterior em vez de depender dessas
+variáveis do terminal.
 
 O avaliador usa a conta `admin` criada pela migração V5, com perfil `ADMIN`
 e senha inicial `admin`. A migração armazena somente o hash BCrypt. Caso o
